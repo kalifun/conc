@@ -23,9 +23,13 @@ func (p *PanicCatcher) Try(f func()) {
 	f()
 }
 
+// Capture anomalies
 func (p *PanicCatcher) tryRecover() {
 	if val := recover(); val != nil {
+		// if an exception is caught, perform the following method.
+		// skip: The number of stacks skipped
 		rp := NewRecoveredPanic(1, val)
+		// if you meet expectations, replace the value
 		p.recovered.CompareAndSwap(nil, &rp)
 	}
 }
@@ -52,6 +56,7 @@ func (p *PanicCatcher) Recovered() *RecoveredPanic {
 func NewRecoveredPanic(skip int, value any) RecoveredPanic {
 	// 64 frames should be plenty
 	var callers [64]uintptr
+	// Callers: The program counter used to return the calling stack
 	n := runtime.Callers(skip+1, callers[:])
 	return RecoveredPanic{
 		Value:   value,
@@ -73,6 +78,7 @@ type RecoveredPanic struct {
 	Stack []byte
 }
 
+// Used to print error messages in the stack
 func (c *RecoveredPanic) Error() string {
 	return fmt.Sprintf("panic: %v\nstacktrace:\n%s\n", c.Value, c.Stack)
 }
